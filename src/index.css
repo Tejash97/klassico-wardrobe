@@ -85,16 +85,19 @@
   }
 }
 
-.image-hover-zoom {
-  @apply overflow-hidden;
-}
+@layer utilities {
+  .image-hover-zoom {
+    @apply overflow-hidden;
+  }
 
-.image-hover-zoom img {
-  @apply transition-transform duration-700 ease-out-expo;
-}
+  .image-hover-zoom img {
+    @apply transition-transform duration-700;
+    transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1); /* ease-out-expo */
+  }
 
-.image-hover-zoom:hover img {
-  @apply scale-105;
+  .image-hover-zoom:hover img {
+    @apply scale-105;
+  }
 }
 
 .glass-panel {
