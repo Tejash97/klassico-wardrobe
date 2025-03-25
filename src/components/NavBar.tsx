@@ -1,12 +1,27 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Search, User, Menu, X } from 'lucide-react';
+import { Heart, ShoppingBag, Search, User, Menu, X, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export const NavBar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const { getItemCount } = useCart();
+  const cartItemCount = getItemCount();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -27,7 +42,7 @@ export const NavBar = () => {
 
   return (
     <header className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out-expo",
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
       isScrolled ? "bg-white/90 backdrop-blur-lg shadow-sm" : "bg-transparent"
     )}>
       <div className="container mx-auto px-4 md:px-6">
@@ -57,6 +72,7 @@ export const NavBar = () => {
             >
               <Search size={20} />
             </button>
+            
             <Link 
               to="/wishlist" 
               className="p-2 hover:bg-secondary rounded-full transition-colors"
@@ -64,20 +80,51 @@ export const NavBar = () => {
             >
               <Heart size={20} />
             </Link>
+            
             <Link 
               to="/cart" 
-              className="p-2 hover:bg-secondary rounded-full transition-colors"
+              className="p-2 hover:bg-secondary rounded-full transition-colors relative"
               aria-label="Shopping Bag"
             >
               <ShoppingBag size={20} />
+              {cartItemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center rounded-full" variant="default">
+                  {cartItemCount}
+                </Badge>
+              )}
             </Link>
-            <Link 
-              to="/account" 
-              className="hidden md:flex p-2 hover:bg-secondary rounded-full transition-colors"
-              aria-label="Account"
-            >
-              <User size={20} />
-            </Link>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full p-2">
+                    <User size={20} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer">Orders</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive">
+                    <LogOut size={16} className="mr-2" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link 
+                to="/auth" 
+                className="hidden md:flex p-2 hover:bg-secondary rounded-full transition-colors"
+                aria-label="Account"
+              >
+                <User size={20} />
+              </Link>
+            )}
             
             {/* Mobile menu button */}
             <button 
@@ -94,7 +141,7 @@ export const NavBar = () => {
       {/* Mobile Menu */}
       <div 
         className={cn(
-          "fixed inset-0 bg-white z-40 pt-16 transition-transform duration-300 ease-out-expo md:hidden",
+          "fixed inset-0 bg-white z-40 pt-16 transition-transform duration-300 ease-out md:hidden",
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -108,10 +155,34 @@ export const NavBar = () => {
             
             <div className="h-px w-full bg-border my-2"></div>
             
-            <MobileNavLink onClick={() => setIsMobileMenuOpen(false)} href="/account">
-              <User size={18} className="mr-2" />
-              Account
-            </MobileNavLink>
+            {user ? (
+              <>
+                <MobileNavLink onClick={() => setIsMobileMenuOpen(false)} href="/profile">
+                  <User size={18} className="mr-2" />
+                  Profile
+                </MobileNavLink>
+                <MobileNavLink onClick={() => setIsMobileMenuOpen(false)} href="/orders">
+                  <ShoppingBag size={18} className="mr-2" />
+                  Orders
+                </MobileNavLink>
+                <button 
+                  onClick={() => {
+                    signOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center text-lg font-medium text-destructive"
+                >
+                  <LogOut size={18} className="mr-2" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <MobileNavLink onClick={() => setIsMobileMenuOpen(false)} href="/auth">
+                <User size={18} className="mr-2" />
+                Sign In / Register
+              </MobileNavLink>
+            )}
+            
             <MobileNavLink onClick={() => setIsMobileMenuOpen(false)} href="/search">
               <Search size={18} className="mr-2" />
               Search

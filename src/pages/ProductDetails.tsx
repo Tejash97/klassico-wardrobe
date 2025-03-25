@@ -1,33 +1,69 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { ProductCard } from '../components/ProductCard';
-import { getProductBySlug, getRelatedProducts } from '../data/products';
 import { Heart, ShoppingBag, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
+import { fetchProductBySlug, fetchProducts } from '@/services/productService';
 
 const ProductDetails = () => {
   const { slug } = useParams<{ slug: string }>();
-  const product = getProductBySlug(slug || '');
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   
-  const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-  
-  const relatedProducts = product
-    ? getRelatedProducts(product.id, product.category.split(',')[0])
-    : [];
+  const { addItem } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Reset state when product changes
     setSelectedSize('');
     setQuantity(1);
+    setLoading(true);
+    
+    // Fetch product data
+    const loadProduct = async () => {
+      try {
+        const productData = await fetchProductBySlug(slug || '');
+        setProduct(productData);
+        
+        // Fetch related products
+        if (productData) {
+          const allProducts = await fetchProducts();
+          const related = allProducts
+            .filter(p => p.id !== productData.id && p.category === productData.category)
+            .slice(0, 4);
+          setRelatedProducts(related);
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadProduct();
     
     // Scroll to top when navigating to a new product
     window.scrollTo(0, 0);
   }, [slug]);
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 min-h-[60vh] flex items-center justify-center">
+          <p>Loading product information...</p>
+        </div>
+      </Layout>
+    );
+  }
   
   if (!product) {
     return (
@@ -39,7 +75,7 @@ const ProductDetails = () => {
               Sorry, the product you're looking for doesn't exist or has been removed.
             </p>
             <Link
-              to="/products"
+              to="/"
               className="bg-black text-white px-6 py-2.5 rounded-sm hover:bg-black/90 transition-colors"
             >
               Continue Shopping
@@ -56,16 +92,16 @@ const ProductDetails = () => {
       return;
     }
     
-    // In a real app, this would add the product to the cart
-    toast.success('Added to cart');
-    console.log('Adding to cart:', {
-      product,
-      quantity,
-      size: selectedSize,
-    });
+    addItem(product, quantity, selectedSize);
   };
   
   const toggleWishlist = () => {
+    if (!user) {
+      toast.error('Please sign in to add items to your wishlist');
+      navigate('/auth');
+      return;
+    }
+    
     setIsWishlisted(!isWishlisted);
     
     if (!isWishlisted) {
@@ -77,8 +113,12 @@ const ProductDetails = () => {
   
   const shareProduct = () => {
     // In a real app, this would open a share dialog
-    toast.success('Share link copied');
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Link copied to clipboard');
   };
+
+  // Determine product sizes
+  const sizes = product.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
 
   return (
     <Layout>
@@ -195,10 +235,10 @@ const ProductDetails = () => {
               <div className="mb-4">
                 <h3 className="font-medium mb-2">Product Details</h3>
                 <p className="text-muted-foreground">
-                  This premium {product.category.includes('jeans') ? 'jean' : 
+                  {product.description || `This premium ${product.category.includes('jeans') ? 'jean' : 
                     product.category.includes('blazer') ? 'blazer' : 'kurti'} is crafted from 
                   high-quality materials, ensuring comfort and durability. Perfect for everyday wear
-                  or special occasions.
+                  or special occasions.`}
                 </p>
               </div>
               
