@@ -1,6 +1,20 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Product } from "@/components/ProductCard";
+
+// Update the Product interface to use string for id to match Supabase UUIDs
+export interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  image: string;
+  category: string;
+  slug: string;
+  description?: string;
+  additional_images?: string[];
+  sizes?: string[];
+  available?: boolean;
+}
 
 export interface ProductCreateInput {
   name: string;
@@ -45,6 +59,10 @@ export async function fetchProducts(): Promise<Product[]> {
     image: item.image_url,
     category: item.categories?.name || "",
     slug: item.slug,
+    description: item.description,
+    additional_images: item.additional_images,
+    sizes: item.sizes,
+    available: item.available,
   }));
 }
 
@@ -82,6 +100,10 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
     image: data.image_url,
     category: data.categories?.name || "",
     slug: data.slug,
+    description: data.description,
+    additional_images: data.additional_images,
+    sizes: data.sizes,
+    available: data.available,
   };
 }
 

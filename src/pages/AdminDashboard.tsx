@@ -138,8 +138,14 @@ const AdminDashboard = () => {
       } else {
         // Create new product
         await createProduct({
-          ...values,
+          name: values.name,
           brand: "Klassico",
+          price: values.price,
+          image_url: values.image_url,
+          category_id: values.category_id,
+          description: values.description,
+          slug: values.slug,
+          sizes: values.sizes,
           additional_images: []
         });
         toast.success("Product created successfully");
@@ -161,7 +167,12 @@ const AdminDashboard = () => {
 
   const onCategorySubmit = async (values: z.infer<typeof categorySchema>) => {
     try {
-      await createCategory(values);
+      await createCategory({
+        name: values.name,
+        slug: values.slug,
+        description: values.description,
+        image_url: values.image_url
+      });
       toast.success("Category created successfully");
       
       // Refresh categories list
